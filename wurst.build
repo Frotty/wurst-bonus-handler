@@ -1,0 +1,4 @@
+---
+projectName: Wurst Bonus Handler
+dependencies:
+- https://github.com/wurstscript/wurstStdlib2
