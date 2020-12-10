@@ -1,6 +1,6 @@
 
 package BonusHandler
-// Version 1.6 - Credits: Frotty, Overkane, muzzel, Crigges, Earth-Fury, Halithor
+// Version 1.7 - Credits: Frotty, Overkane, muzzel, Crigges, Earth-Fury, Halithor
 import AbilityObjEditing
 import ObjectIds
 import Preloader
@@ -37,51 +37,51 @@ public enum Bonus
 	AGILITY
 	INTELLIGENCE
 
-//Gets the current bonus value
-public function getUnitBonus(unit u, Bonus bonusType) returns int
+/** Gets the current bonus value */
+public function unit.getBonus(Bonus bonusType) returns int
 	let bonus = bonusTypes[bonusType castTo int]
 	var result = 0
-	if u.hasAbility(bonus.baseRaw + rawShiftNeg)
+	if this.hasAbility(bonus.baseRaw + rawShiftNeg)
 		result -= powersOf2[bonus.maxBonus]
 	for i = 0 to bonus.maxBonus - 1
-		result += u.hasAbility(bonus.baseRaw + shiftRaw(i)) ? powersOf2[i] : 0
+		result += this.hasAbility(bonus.baseRaw + shiftRaw(i)) ? powersOf2[i] : 0
 	return result
 
-//Adds to current bonus bonusValue
-public function addUnitBonus(unit u, Bonus bonusType, int bonusValue)
-	int currentBonusValue = getUnitBonus(u, bonusType)
-	int afterBonusValue = currentBonusValue + bonusValue
-	setUnitBonus(u, bonusType, afterBonusValue)
+/** Adds to current bonus bonus value */
+public function unit.addBonus(Bonus bonusType, int bonusValue)
+	let currentBonusValue = this.getBonus(bonusType)
+	let afterBonusValue = currentBonusValue + bonusValue
+	this.setBonus(bonusType, afterBonusValue)
 
 /** Sets the bonus of specified type for the unit to the given amount. */
-public function setUnitBonus(unit u, Bonus bonusType, int amount)
-	bonusTypes[bonusType castTo int].setBonus(u, amount)
+public function unit.setBonus(Bonus bonusType, int amount)
+	bonusTypes[bonusType castTo int].setBonus(this, amount)
 
 /** Sets the bonus of specified type for the unit to zero. */
-public function clearUnitBonus(unit u, Bonus bonusType)
-	bonusTypes[bonusType castTo int].clearBonus(u)
+public function unit.clearBonus(Bonus bonusType)
+	bonusTypes[bonusType castTo int].clearBonus(this)
 
 /** Gets the highest applicable value for the specified bonus type. */
-public function getMaxBonus(Bonus bonusType) returns int
-	return powersOf2[bonusTypes[bonusType castTo int].maxBonus - 1]
+public function Bonus.getMax() returns int
+	return powersOf2[bonusTypes[this castTo int].maxBonus - 1]
 
 /** Gets the smallest applicable value for the specified bonus type. */
-public function getMinBonus(Bonus bonusType) returns int
-	return -powersOf2[bonusTypes[bonusType castTo int].maxBonus]
+public function Bonus.getMin() returns int
+	return -powersOf2[bonusTypes[this castTo int].maxBonus]
 
 /** Removes all bonuses from the specified unit. */
-public function clearAllUnitBonuses(unit u)
-	bonusTypes[Bonus.LIFE castTo int].clearBonus(u)
-	bonusTypes[Bonus.MANA castTo int].clearBonus(u)
-	bonusTypes[Bonus.DAMAGE castTo int].clearBonus(u)
-	bonusTypes[Bonus.ARMOR castTo int].clearBonus(u)
-	bonusTypes[Bonus.SIGHTRANGE castTo int].clearBonus(u)
-	bonusTypes[Bonus.LIFEREGEN castTo int].clearBonus(u)
-	bonusTypes[Bonus.MANAREGEN castTo int].clearBonus(u)
-	bonusTypes[Bonus.ATTACKSPEED castTo int].clearBonus(u)
-	bonusTypes[Bonus.STRENGTH castTo int].clearBonus(u)
-	bonusTypes[Bonus.AGILITY castTo int].clearBonus(u)
-	bonusTypes[Bonus.INTELLIGENCE castTo int].clearBonus(u)
+public function unit.clearAllBonuses()
+	bonusTypes[Bonus.LIFE castTo int].clearBonus(this)
+	bonusTypes[Bonus.MANA castTo int].clearBonus(this)
+	bonusTypes[Bonus.DAMAGE castTo int].clearBonus(this)
+	bonusTypes[Bonus.ARMOR castTo int].clearBonus(this)
+	bonusTypes[Bonus.SIGHTRANGE castTo int].clearBonus(this)
+	bonusTypes[Bonus.LIFEREGEN castTo int].clearBonus(this)
+	bonusTypes[Bonus.MANAREGEN castTo int].clearBonus(this)
+	bonusTypes[Bonus.ATTACKSPEED castTo int].clearBonus(this)
+	bonusTypes[Bonus.STRENGTH castTo int].clearBonus(this)
+	bonusTypes[Bonus.AGILITY castTo int].clearBonus(this)
+	bonusTypes[Bonus.INTELLIGENCE castTo int].clearBonus(this)
 
 
 /** Enumeration of the bonustypes. */
@@ -147,10 +147,10 @@ function shiftRaw(int n) returns int
 function pow2(int e) returns int
 	if e == 0
 		return 1
-	return 2 * pow2(e-1)
+	return 2 * pow2(e - 1)
 
-function setProperties(AbilityDefinition a, string suffix, string bonusName)
-	a..setItemAbility(false)
+function AbilityDefinition.setProperties(string suffix, string bonusName)
+	this..setItemAbility(false)
 	..setEditorSuffix("(" + suffix + ")")
 	..setIconNormal(Icons.bTNPenguin)
 	..setName("BonusHandler - " + bonusName)
@@ -174,6 +174,10 @@ init
 	bonusTypes[Bonus.STRENGTH castTo int] = new BonusType('$S00', MAX_BONUS_STRENGTH)
 	bonusTypes[Bonus.AGILITY castTo int] = new BonusType('$A00', MAX_BONUS_AGILITY)
 	bonusTypes[Bonus.INTELLIGENCE castTo int] = new BonusType('$I00', MAX_BONUS_INTELLIGENCE)
+	
+	for int i = Bonus.LIFE castTo int to Bonus.INTELLIGENCE castTo int
+		for int j = 0 to (bonusTypes[i].maxBonus - 1)
+			preloadAbility(bonusTypes[i].baseRaw + shiftRaw(j))
 
 @compiletime function genAbilities()
 	string rawCode
@@ -192,7 +196,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionMaxLifeBonusLeast(raw.fromRawCode())
 		a.setMaxLifeGained(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Life")
+		a.setProperties((sign * pow2(n)).toString(), "Life")
 
 	// Mana:
 	rawCode = "$M"
@@ -209,7 +213,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionMaxManaBonusMost(raw.fromRawCode())
 		a.setMaxManaGained(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Mana")
+		a.setProperties((sign * pow2(n)).toString(), "Mana")
 	// Damage:
 	rawCode = "$D"
 	for n = 0 to MAX_BONUS_DAMAGE
@@ -225,7 +229,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionAttackBonus(raw.fromRawCode())
 		a.setAttackBonus(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Damage")
+		a.setProperties((sign * pow2(n)).toString(), "Damage")
 
 	// Armor:
 	rawCode = "$R"
@@ -242,7 +246,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionDefenseBonusPlus1(raw.fromRawCode())
 		a.setDefenseBonus(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Armor")
+		a.setProperties((sign * pow2(n)).toString(), "Armor")
 
 	// Sightrange:
 	rawCode = "$V"
@@ -259,7 +263,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionSightBonus(raw.fromRawCode())
 		a.setSightRangeBonus(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Sightrange")
+		a.setProperties((sign * pow2(n)).toString(), "Sightrange")
 
 	// Liferegen:
 	rawCode = "$l"
@@ -276,7 +280,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionRegenLife(raw.fromRawCode())
 		a.setHitPointsRegeneratedPerSecond(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Liferegen")
+		a.setProperties((sign * pow2(n)).toString(), "Liferegen")
 
 	// Manaregen:
 	rawCode = "$m"
@@ -294,7 +298,7 @@ init
 		if IS_MANAREGEN_PERCENTAL
 			let a = new AbilityDefinitionItemRegenMana(raw.fromRawCode())
 			a.setManaRegenerationBonusasfractionofnormal(1, sign * pow2(n) / 100.)
-			setProperties(a, (sign * pow2(n)).toString() + "%", "Manaregen")
+			a.setProperties((sign * pow2(n)).toString() + "%", "Manaregen")
 		else
 			let a = new AbilityDefinitionNeutralRegenmanaonly(raw.fromRawCode())
 			a.setPercentage(1, false)
@@ -302,7 +306,7 @@ init
 			a.setTargetsAllowed(1, "self")
 			a.setAmountRegenerated(1, sign * pow2(n) / 200.)
 			a.setRace(Race.Other)
-			setProperties(a, (sign * pow2(n)).toString(), "Manaregen")
+			a.setProperties((sign * pow2(n)).toString(), "Manaregen")
 
 	// Attackspeed:
 	rawCode = "$P"
@@ -319,7 +323,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionAttackSpeedIncrease(raw.fromRawCode())
 		a.setAttackSpeedIncrease(1, sign * pow2(n) / 100.)
-		setProperties(a, (sign * pow2(n)).toString() + "%", "Attackspeed")
+		a.setProperties((sign * pow2(n)).toString() + "%", "Attackspeed")
 
 	// Strength:
 	rawCode = "$S"
@@ -336,7 +340,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionStrengthBonusPlus1(raw.fromRawCode())
 		a.setStrengthBonus(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Strength")
+		a.setProperties((sign * pow2(n)).toString(), "Strength")
 
 	// Agility:
 	rawCode = "$A"
@@ -353,7 +357,7 @@ init
 			sign = -1
 		let a = new AbilityDefinitionAgilityBonusPlus1(raw.fromRawCode())
 		a.setAgilityBonus(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Agility")
+		a.setProperties((sign * pow2(n)).toString(), "Agility")
 
 	// Intelligence:
 	rawCode = "$I"
@@ -370,9 +374,5 @@ init
 			sign = -1
 		let a = new AbilityDefinitionIntelligenceBonusPlus1(raw.fromRawCode())
 		a.setIntelligenceBonus(1, sign * pow2(n))
-		setProperties(a, (sign * pow2(n)).toString(), "Intelligence")
+		a.setProperties((sign * pow2(n)).toString(), "Intelligence")
 
-init
-	for int i = Bonus.LIFE castTo int to Bonus.INTELLIGENCE castTo int
-		for int j = 0 to (bonusTypes[i].maxBonus - 1)
-			preloadAbility(bonusTypes[i].baseRaw + shiftRaw(j))
