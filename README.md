@@ -15,7 +15,7 @@ Allows you to add and remove the following bonuses:
 * Agility
 * Intelligence
 
-API
+## API
 
 ```
 /** Gets the current bonus value */
