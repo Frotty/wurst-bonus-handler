@@ -1,18 +1,24 @@
-
 package BonusHandler
-// Version 1.7 - Credits: Frotty, Overkane, muzzel, Crigges, Earth-Fury, Halithor
+
+/*
+ * Allows you to set unit bonuses to e.g. increase hp and armor for custom spells and items.
+ * Mana and HP regeneration are in value per second unless IS_MANAREGEN_PERCENTAL is configured otherwise.
+ * Version 1.8 - Credits: Frotty, Overkane, muzzel, Crigges, Earth-Fury, Halithor
+ */
 import AbilityObjEditing
 import ObjectIds
 import Preloader
 import Icons
+import ErrorHandling
 
+@configurable public constant BONUS_REGEN_STEP = 0.01
 @configurable public constant MAX_BONUS_LIFE = 12
 @configurable public constant MAX_BONUS_MANA = 12
 @configurable public constant MAX_BONUS_DAMAGE = 10
 @configurable public constant MAX_BONUS_ARMOR = 10
 @configurable public constant MAX_BONUS_SIGHTRANGE = 11
-@configurable public constant MAX_BONUS_LIFEREGEN = 4
-@configurable public constant MAX_BONUS_MANAREGEN = 10
+@configurable public constant MAX_BONUS_LIFEREGEN = 12
+@configurable public constant MAX_BONUS_MANAREGEN = 16
 @configurable public constant MAX_BONUS_ATTACKSPEED = 9
 @configurable public constant MAX_BONUS_STRENGTH = 9
 @configurable public constant MAX_BONUS_AGILITY = 9
@@ -47,11 +53,15 @@ public function unit.getBonus(Bonus bonusType) returns int
 		result += this.hasAbility(bonus.baseRaw + shiftRaw(i)) ? powersOf2[i] : 0
 	return result
 
-/** Adds to current bonus bonus value */
+/** Adds to current bonus value */
 public function unit.addBonus(Bonus bonusType, int bonusValue)
 	let currentBonusValue = this.getBonus(bonusType)
-	let afterBonusValue = currentBonusValue + bonusValue
-	this.setBonus(bonusType, afterBonusValue)
+	if bonusType == bonusType.MANAREGEN
+		let afterBonusValue = currentBonusValue + bonusValue * (1 / BONUS_REGEN_STEP)
+		this.setBonus(bonusType, afterBonusValue.toInt())
+	else
+		let afterBonusValue = currentBonusValue + bonusValue
+		this.setBonus(bonusType, afterBonusValue)
 
 /** Sets the bonus of specified type for the unit to the given amount. */
 public function unit.setBonus(Bonus bonusType, int amount)
@@ -95,10 +105,10 @@ class BonusType
 
 	function setBonus(unit u, int bonus)
 		if bonus >= powersOf2[maxBonus]
-			Log.warn("Bonus exceeds maximum")
+			error("Bonus value " + bonus.toString() + " exceeds maximum of " + powersOf2[maxBonus].toString())
 			return
 		if bonus < -powersOf2[maxBonus]
-			Log.warn("Bonus exceeds maximum")
+			error("Bonus value " + bonus.toString() + " exceeds minimum of " + (-powersOf2[maxBonus]).toString())
 			return
 
 		int val
@@ -127,12 +137,12 @@ class BonusType
 
 	function clearBonus(unit u)
 		var raw = baseRaw + rawShiftNeg
-		u.makeAbilityPermanent(raw, false)
-		u.removeAbility(raw)
-		for n = 0 to maxBonus-1
+		u..makeAbilityPermanent(raw, false)
+		..removeAbility(raw)
+		for n = 0 to maxBonus - 1
 			raw = baseRaw + rawShifts[n]
-			u.makeAbilityPermanent(raw, false)
-			u.removeAbility(raw)
+			u..makeAbilityPermanent(raw, false)
+			..removeAbility(raw)
 
 
 /** Example: 'XY00' + shiftRaw(15) -> 'XY15' */
@@ -174,7 +184,7 @@ init
 	bonusTypes[Bonus.STRENGTH castTo int] = new BonusType('$S00', MAX_BONUS_STRENGTH)
 	bonusTypes[Bonus.AGILITY castTo int] = new BonusType('$A00', MAX_BONUS_AGILITY)
 	bonusTypes[Bonus.INTELLIGENCE castTo int] = new BonusType('$I00', MAX_BONUS_INTELLIGENCE)
-	
+
 	for int i = Bonus.LIFE castTo int to Bonus.INTELLIGENCE castTo int
 		for int j = 0 to (bonusTypes[i].maxBonus - 1)
 			preloadAbility(bonusTypes[i].baseRaw + shiftRaw(j))
@@ -194,9 +204,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionMaxLifeBonusLeast(raw.fromRawCode())
-		a.setMaxLifeGained(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Life")
+		new AbilityDefinitionMaxLifeBonusLeast(raw.fromRawCode())
+		..setMaxLifeGained(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Life")
 
 	// Mana:
 	rawCode = "$M"
@@ -211,9 +221,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionMaxManaBonusMost(raw.fromRawCode())
-		a.setMaxManaGained(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Mana")
+		new AbilityDefinitionMaxManaBonusMost(raw.fromRawCode())
+		..setMaxManaGained(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Mana")
 	// Damage:
 	rawCode = "$D"
 	for n = 0 to MAX_BONUS_DAMAGE
@@ -227,9 +237,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionAttackBonus(raw.fromRawCode())
-		a.setAttackBonus(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Damage")
+		new AbilityDefinitionAttackBonus(raw.fromRawCode())
+		..setAttackBonus(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Damage")
 
 	// Armor:
 	rawCode = "$R"
@@ -244,9 +254,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionDefenseBonusPlus1(raw.fromRawCode())
-		a.setDefenseBonus(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Armor")
+		new AbilityDefinitionDefenseBonusPlus1(raw.fromRawCode())
+		..setDefenseBonus(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Armor")
 
 	// Sightrange:
 	rawCode = "$V"
@@ -261,9 +271,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionSightBonus(raw.fromRawCode())
-		a.setSightRangeBonus(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Sightrange")
+		new AbilityDefinitionSightBonus(raw.fromRawCode())
+		..setSightRangeBonus(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Sightrange")
 
 	// Liferegen:
 	rawCode = "$l"
@@ -278,9 +288,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionRegenLife(raw.fromRawCode())
-		a.setHitPointsRegeneratedPerSecond(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Liferegen")
+		new AbilityDefinitionRegenLife(raw.fromRawCode())
+		..setHitPointsRegeneratedPerSecond(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Liferegen")
 
 	// Manaregen:
 	rawCode = "$m"
@@ -296,17 +306,17 @@ init
 			raw = rawCode + "--"
 			sign = -1
 		if IS_MANAREGEN_PERCENTAL
-			let a = new AbilityDefinitionItemRegenMana(raw.fromRawCode())
-			a.setManaRegenerationBonusasfractionofnormal(1, sign * pow2(n) / 100.)
-			a.setProperties((sign * pow2(n)).toString() + "%", "Manaregen")
+			new AbilityDefinitionItemRegenMana(raw.fromRawCode())
+			..setManaRegenerationBonusasfractionofnormal(1, sign * pow2(n) / 100.)
+			..setProperties((sign * pow2(n)).toString() + "%", "Manaregen")
 		else
-			let a = new AbilityDefinitionNeutralRegenmanaonly(raw.fromRawCode())
-			a.setPercentage(1, false)
-			a.setAreaofEffect(1, 1)
-			a.setTargetsAllowed(1, "self")
-			a.setAmountRegenerated(1, sign * pow2(n) / 200.)
-			a.setRace(Race.Other)
-			a.setProperties((sign * pow2(n)).toString(), "Manaregen")
+			new AbilityDefinitionNeutralRegenmanaonly(raw.fromRawCode())
+			..setPercentage(1, false)
+			..setAreaofEffect(1, 1)
+			..setTargetsAllowed(1, "self")
+			..setAmountRegenerated(1, sign * pow2(n) / (1. / BONUS_REGEN_STEP))
+			..setRace(Race.Other)
+			..setProperties((sign * pow2(n)).toString(), "Manaregen")
 
 	// Attackspeed:
 	rawCode = "$P"
@@ -321,9 +331,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionAttackSpeedIncrease(raw.fromRawCode())
-		a.setAttackSpeedIncrease(1, sign * pow2(n) / 100.)
-		a.setProperties((sign * pow2(n)).toString() + "%", "Attackspeed")
+		new AbilityDefinitionAttackSpeedIncrease(raw.fromRawCode())
+		..setAttackSpeedIncrease(1, sign * pow2(n) / 100.)
+		..setProperties((sign * pow2(n)).toString() + "%", "Attackspeed")
 
 	// Strength:
 	rawCode = "$S"
@@ -338,9 +348,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionStrengthBonusPlus1(raw.fromRawCode())
-		a.setStrengthBonus(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Strength")
+		new AbilityDefinitionStrengthBonusPlus1(raw.fromRawCode())
+		..setStrengthBonus(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Strength")
 
 	// Agility:
 	rawCode = "$A"
@@ -355,9 +365,9 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionAgilityBonusPlus1(raw.fromRawCode())
-		a.setAgilityBonus(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Agility")
+		new AbilityDefinitionAgilityBonusPlus1(raw.fromRawCode())
+		..setAgilityBonus(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Agility")
 
 	// Intelligence:
 	rawCode = "$I"
@@ -372,7 +382,7 @@ init
 		else
 			raw = rawCode + "--"
 			sign = -1
-		let a = new AbilityDefinitionIntelligenceBonusPlus1(raw.fromRawCode())
-		a.setIntelligenceBonus(1, sign * pow2(n))
-		a.setProperties((sign * pow2(n)).toString(), "Intelligence")
+		new AbilityDefinitionIntelligenceBonusPlus1(raw.fromRawCode())
+		..setIntelligenceBonus(1, sign * pow2(n))
+		..setProperties((sign * pow2(n)).toString(), "Intelligence")
 
