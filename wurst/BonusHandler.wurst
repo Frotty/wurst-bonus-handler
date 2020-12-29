@@ -3,7 +3,7 @@ package BonusHandler
 /*
  * Allows you to set unit bonuses to e.g. increase hp and armor for custom spells and items.
  * Mana and HP regeneration are in value per second unless IS_MANAREGEN_PERCENTAL is configured otherwise.
- * Version 1.8 - Credits: Frotty, Overkane, muzzel, Crigges, Earth-Fury, Halithor
+ * Version 1.9 - Credits: Frotty, Overkane, muzzel, Crigges, Earth-Fury, Halithor
  */
 import AbilityObjEditing
 import ObjectIds
@@ -11,7 +11,8 @@ import Preloader
 import Icons
 import ErrorHandling
 
-@configurable public constant BONUS_REGEN_STEP = 0.01
+/** Determines the step size in which mana regeneration can be controlled */
+@configurable public constant BONUS_MANA_REGEN_STEP = 0.1
 @configurable public constant MAX_BONUS_LIFE = 12
 @configurable public constant MAX_BONUS_MANA = 12
 @configurable public constant MAX_BONUS_DAMAGE = 10
@@ -19,10 +20,10 @@ import ErrorHandling
 @configurable public constant MAX_BONUS_SIGHTRANGE = 11
 @configurable public constant MAX_BONUS_LIFEREGEN = 12
 @configurable public constant MAX_BONUS_MANAREGEN = 16
-@configurable public constant MAX_BONUS_ATTACKSPEED = 9
-@configurable public constant MAX_BONUS_STRENGTH = 9
-@configurable public constant MAX_BONUS_AGILITY = 9
-@configurable public constant MAX_BONUS_INTELLIGENCE = 9
+@configurable public constant MAX_BONUS_ATTACKSPEED = 10
+@configurable public constant MAX_BONUS_STRENGTH = 10
+@configurable public constant MAX_BONUS_AGILITY = 10
+@configurable public constant MAX_BONUS_INTELLIGENCE = 10
 @configurable public constant IS_MANAREGEN_PERCENTAL = false
 
 int array powersOf2
@@ -43,6 +44,24 @@ public enum Bonus
 	AGILITY
 	INTELLIGENCE
 
+/** Adds to current bonus value.
+  * The only fractional bonus supported is mana regeneration.
+  * Other real input values are rounded to the nearest int. */
+public function unit.addBonus(Bonus bonusType, real bonusValue)
+	let currentBonusValue = this.getBonus(bonusType)
+	if bonusType == bonusType.MANAREGEN and not IS_MANAREGEN_PERCENTAL
+		let afterBonusValue = currentBonusValue + bonusValue * (1 / BONUS_MANA_REGEN_STEP)
+		this.setBonus(bonusType, afterBonusValue.round())
+	else
+		let afterBonusValue = currentBonusValue + bonusValue
+		this.setBonus(bonusType, afterBonusValue.round())
+
+/** Sets the bonus of specified type for the unit to the given amount.
+  * The only fractional bonus supported is mana regeneration.
+  * Other real input values are rounded to the nearest int. */
+public function unit.setBonus(Bonus bonusType, int amount)
+	bonusTypes[bonusType castTo int].setBonus(this, amount)
+
 /** Gets the current bonus value */
 public function unit.getBonus(Bonus bonusType) returns int
 	let bonus = bonusTypes[bonusType castTo int]
@@ -52,20 +71,6 @@ public function unit.getBonus(Bonus bonusType) returns int
 	for i = 0 to bonus.maxBonus - 1
 		result += this.hasAbility(bonus.baseRaw + shiftRaw(i)) ? powersOf2[i] : 0
 	return result
-
-/** Adds to current bonus value */
-public function unit.addBonus(Bonus bonusType, int bonusValue)
-	let currentBonusValue = this.getBonus(bonusType)
-	if bonusType == bonusType.MANAREGEN
-		let afterBonusValue = currentBonusValue + bonusValue * (1 / BONUS_REGEN_STEP)
-		this.setBonus(bonusType, afterBonusValue.toInt())
-	else
-		let afterBonusValue = currentBonusValue + bonusValue
-		this.setBonus(bonusType, afterBonusValue)
-
-/** Sets the bonus of specified type for the unit to the given amount. */
-public function unit.setBonus(Bonus bonusType, int amount)
-	bonusTypes[bonusType castTo int].setBonus(this, amount)
 
 /** Sets the bonus of specified type for the unit to zero. */
 public function unit.clearBonus(Bonus bonusType)
@@ -314,7 +319,7 @@ init
 			..setPercentage(1, false)
 			..setAreaofEffect(1, 1)
 			..setTargetsAllowed(1, "self")
-			..setAmountRegenerated(1, sign * pow2(n) / (1. / BONUS_REGEN_STEP))
+			..setAmountRegenerated(1, sign * pow2(n) / (1. / BONUS_MANA_REGEN_STEP))
 			..setRace(Race.Other)
 			..setProperties((sign * pow2(n)).toString(), "Manaregen")
 
