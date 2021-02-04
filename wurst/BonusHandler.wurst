@@ -44,7 +44,7 @@ public enum Bonus
 	AGILITY
 	INTELLIGENCE
 
-function Bonus.toString() returns string
+public function Bonus.toString() returns string
 	switch this
 		case LIFE
 			return "Hitpoints"
