@@ -44,6 +44,31 @@ public enum Bonus
 	AGILITY
 	INTELLIGENCE
 
+function Bonus.toString() returns string
+	switch this
+		case LIFE
+			return "Hitpoints"
+		case MANA
+			return "Manapoints"
+		case DAMAGE
+			return "Damage"
+		case ARMOR
+			return "Armor"
+		case SIGHTRANGE
+			return "Sightrange"
+		case LIFEREGEN
+			return "Health Regeneration"
+		case MANAREGEN
+			return "Mana Rgeneration"
+		case ATTACKSPEED
+			return "Attackspeed"
+		case STRENGTH
+			return "Strength"
+		case AGILITY
+			return "Agility"
+		case INTELLIGENCE
+			return "Intelligence"
+
 /** Adds to current bonus value.
   * The only fractional bonus supported is mana regeneration.
   * Other real input values are rounded to the nearest int. */
