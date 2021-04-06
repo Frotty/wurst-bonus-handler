@@ -86,7 +86,7 @@ public function Bonus.toString() returns string
 		case MANAREGEN
 			return "Mana Regeneration"
 		case ATTACKSPEED
-			return "% Attackspeed"
+			return "Attackspeed"
 		case STRENGTH
 			return "Strength"
 		case AGILITY
