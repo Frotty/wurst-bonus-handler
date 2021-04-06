@@ -51,17 +51,17 @@ public function Bonus.toString() returns string
 		case MANA
 			return "Manapoints"
 		case DAMAGE
-			return "Damage"
+			return "Attack Damage"
 		case ARMOR
 			return "Armor"
 		case SIGHTRANGE
 			return "Sightrange"
 		case LIFEREGEN
-			return "Health Regeneration"
+			return "Health Regeneration per second"
 		case MANAREGEN
-			return "Mana Rgeneration"
+			return "Mana Regeneration per second"
 		case ATTACKSPEED
-			return "Attackspeed"
+			return "% Attackspeed"
 		case STRENGTH
 			return "Strength"
 		case AGILITY
