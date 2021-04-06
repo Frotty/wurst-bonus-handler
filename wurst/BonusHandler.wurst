@@ -44,6 +44,31 @@ public enum Bonus
 	AGILITY
 	INTELLIGENCE
 
+public function Bonus.getMeasure() returns string
+	switch this
+		case LIFE
+			return ""
+		case MANA
+			return ""
+		case DAMAGE
+			return ""
+		case ARMOR
+			return ""
+		case SIGHTRANGE
+			return ""
+		case LIFEREGEN
+			return "per second"
+		case MANAREGEN
+			return "per second"
+		case ATTACKSPEED
+			return "%"
+		case STRENGTH
+			return ""
+		case AGILITY
+			return ""
+		case INTELLIGENCE
+			return ""
+
 public function Bonus.toString() returns string
 	switch this
 		case LIFE
@@ -57,9 +82,9 @@ public function Bonus.toString() returns string
 		case SIGHTRANGE
 			return "Sightrange"
 		case LIFEREGEN
-			return "Health Regeneration per second"
+			return "Health Regeneration"
 		case MANAREGEN
-			return "Mana Regeneration per second"
+			return "Mana Regeneration"
 		case ATTACKSPEED
 			return "% Attackspeed"
 		case STRENGTH
