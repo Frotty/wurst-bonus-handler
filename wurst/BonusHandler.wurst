@@ -57,9 +57,9 @@ public function Bonus.getMeasure() returns string
 		case SIGHTRANGE
 			return ""
 		case LIFEREGEN
-			return "per second"
+			return " per second"
 		case MANAREGEN
-			return "per second"
+			return " per second"
 		case ATTACKSPEED
 			return "%"
 		case STRENGTH
