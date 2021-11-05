@@ -264,10 +264,6 @@ init
 		for int j = 0 to (bonusTypes[i].maxBonus - 1)
 			preloadAbility(bonusTypes[i].getBonusId(j))
 
-	doAfter(1.) ->
-		createUnit(Player(0), 'hfoo', ZERO2, 0 .fromDeg())
-		.setBonus(Bonus.DAMAGE, -1)
-
 @compiletime function genAbilities()
 	let generator = new IdGenerator('$L00')
 	// Life:
