@@ -180,29 +180,33 @@ class BonusType
 			error("Bonus value " + bonus.toString() + " exceeds minimum of " + (-powersOf2[maxBonus]).toString())
 			return
 
-		int val
-		bool addNeg = false
-		var raw = getBonusId(maxBonus)
+		var val = bonus
 		if bonus < 0
-			addNeg = true
-			val = bonus + powersOf2[maxBonus]
-		else
-			val = bonus
-			u..makeAbilityPermanent(raw, false)
-			..removeAbility(raw)
-		for n = maxBonus-1 downto 0
-			raw = getBonusId(n)
-			if val >= powersOf2[n]
-				u..addAbility(raw)
-				..makeAbilityPermanent(raw, true)
-				val -= powersOf2[n]
-			else
-				u..makeAbilityPermanent(raw, false)
-				..removeAbility(raw)
-		// Add negative last to avoid setting stat to <0 (killing the unit, etc)
-		if addNeg
+			val = -powersOf2[maxBonus]
+			for n = maxBonus - 1 downto 0
+				let id = getBonusId(n)
+				if val < bonus and -val >= powersOf2[n]
+					u..addAbility(id)
+					..makeAbilityPermanent(id, true)
+					val += powersOf2[n]
+				else
+					u..makeAbilityPermanent(id, false)
+					..removeAbility(id)
+
+			// Add negative last to avoid setting stat to <0 (killing the unit, etc)
 			u..addAbility(getBonusId(maxBonus))
 			..makeAbilityPermanent(getBonusId(maxBonus), true)
+		else
+			for n = maxBonus - 1 downto 0
+				let id = getBonusId(n)
+				if val >= powersOf2[n]
+					u..addAbility(id)
+					..makeAbilityPermanent(id, true)
+					val -= powersOf2[n]
+				else
+					u..makeAbilityPermanent(id, false)
+					..removeAbility(id)
+
 
 	function clearBonus(unit u)
 		var raw = getBonusId(maxBonus)
@@ -235,31 +239,34 @@ init
 	var offset = 0
 
 	bonusTypes[Bonus.LIFE castTo int] = new BonusType(offset, generator, MAX_BONUS_LIFE)
-	offset += MAX_BONUS_LIFE
+	offset += MAX_BONUS_LIFE + 1
 	bonusTypes[Bonus.MANA castTo int] = new BonusType(offset, generator, MAX_BONUS_MANA)
-	offset += MAX_BONUS_MANA
+	offset += MAX_BONUS_MANA + 1
 	bonusTypes[Bonus.DAMAGE castTo int] = new BonusType(offset, generator, MAX_BONUS_DAMAGE)
-	offset += MAX_BONUS_DAMAGE
+	offset += MAX_BONUS_DAMAGE + 1
 	bonusTypes[Bonus.ARMOR castTo int] = new BonusType(offset, generator, MAX_BONUS_ARMOR)
-	offset += MAX_BONUS_ARMOR
+	offset += MAX_BONUS_ARMOR + 1
 	bonusTypes[Bonus.SIGHTRANGE castTo int] = new BonusType(offset, generator, MAX_BONUS_SIGHTRANGE)
-	offset += MAX_BONUS_SIGHTRANGE
+	offset += MAX_BONUS_SIGHTRANGE + 1
 	bonusTypes[Bonus.LIFEREGEN castTo int] = new BonusType(offset, generator, MAX_BONUS_LIFEREGEN)
-	offset += MAX_BONUS_LIFEREGEN
+	offset += MAX_BONUS_LIFEREGEN + 1
 	bonusTypes[Bonus.MANAREGEN castTo int] = new BonusType(offset, generator, MAX_BONUS_MANAREGEN)
-	offset += MAX_BONUS_MANAREGEN
+	offset += MAX_BONUS_MANAREGEN + 1
 	bonusTypes[Bonus.ATTACKSPEED castTo int] = new BonusType(offset, generator, MAX_BONUS_ATTACKSPEED)
-	offset += MAX_BONUS_ATTACKSPEED
+	offset += MAX_BONUS_ATTACKSPEED + 1
 	bonusTypes[Bonus.STRENGTH castTo int] = new BonusType(offset, generator, MAX_BONUS_STRENGTH)
-	offset += MAX_BONUS_STRENGTH
+	offset += MAX_BONUS_STRENGTH + 1
 	bonusTypes[Bonus.AGILITY castTo int] = new BonusType(offset, generator, MAX_BONUS_AGILITY)
-	offset += MAX_BONUS_AGILITY
+	offset += MAX_BONUS_AGILITY + 1
 	bonusTypes[Bonus.INTELLIGENCE castTo int] = new BonusType(offset, generator, MAX_BONUS_INTELLIGENCE)
 
 	for int i = Bonus.LIFE castTo int to Bonus.INTELLIGENCE castTo int
 		for int j = 0 to (bonusTypes[i].maxBonus - 1)
 			preloadAbility(bonusTypes[i].getBonusId(j))
 
+	doAfter(1.) ->
+		createUnit(Player(0), 'hfoo', ZERO2, 0 .fromDeg())
+		.setBonus(Bonus.DAMAGE, -1)
 
 @compiletime function genAbilities()
 	let generator = new IdGenerator('$L00')
