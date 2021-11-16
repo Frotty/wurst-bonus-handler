@@ -10,8 +10,6 @@ import AbilityObjEditing
 import Preloader
 import Icons
 import ErrorHandling
-import ClosureTimers
-import ObjectIds
 
 /** Determines the step size in which mana regeneration can be controlled */
 @configurable public constant BONUS_MANA_REGEN_STEP = 0.1
