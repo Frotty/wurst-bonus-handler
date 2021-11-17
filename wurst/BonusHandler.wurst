@@ -120,6 +120,7 @@ public function unit.getBonus(Bonus bonusType) returns int
 		result -= powersOf2[bonus.maxBonus]
 	for i = 0 to bonus.maxBonus - 1
 		result += this.hasAbility(bonus.getBonusId(i)) ? powersOf2[i] : 0
+
 	return result
 
 /** Sets the bonus of specified type for the unit to zero. */
@@ -183,7 +184,7 @@ class BonusType
 			val = -powersOf2[maxBonus]
 			for n = maxBonus - 1 downto 0
 				let id = getBonusId(n)
-				if val < bonus and -val >= powersOf2[n]
+				if val + powersOf2[n] <= bonus
 					u..addAbility(id)
 					..makeAbilityPermanent(id, true)
 					val += powersOf2[n]
@@ -195,6 +196,8 @@ class BonusType
 			u..addAbility(getBonusId(maxBonus))
 			..makeAbilityPermanent(getBonusId(maxBonus), true)
 		else
+			u..makeAbilityPermanent(getBonusId(maxBonus), false)
+			..removeAbility(getBonusId(maxBonus))
 			for n = maxBonus - 1 downto 0
 				let id = getBonusId(n)
 				if val >= powersOf2[n]
